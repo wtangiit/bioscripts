@@ -16,20 +16,11 @@ is that every group has the same data.
 import os
 from optparse import OptionParser
 
-start_codon_set = set(['ATG', 'GTG', 'TTG'])
-stop_codon_set = set(['TAA', 'TAG', 'TGA'])
-
 nt_dict = {'A':0, 'C': 1, 'G':2, 'T':3, 
            'a':0, 'c':1, 'g':2, 't':3}
 
 complement_dict = {'A':'T', 'C': 'G', 'G':'C', 'T':'A', 
            'a':'t', 'c':'g', 'g':'c', 't':'a'}
-
-
-dimer_list = ['AA', 'AC', 'AG', 'AT', 
-              'CA', 'CC', 'CG', 'CT', 
-              'GA', 'GC', 'GG', 'GT', 
-              'TA', 'TC', 'TG', 'TT']
 
 STRATIFY = False
 
@@ -50,10 +41,6 @@ def trimer_to_int(triplet):
         return t1 * 16 + t2 * 4 + t3
     else:
         return -1
-
-def get_complemet(nt):
-    if nt == 'A' or nt == 'a':
-        return 'T'
     
 def get_gc_content(sequence):
     '''return gc_content% of a given sequence'''
@@ -227,7 +214,7 @@ def get_reverse_complement(seq):
     return rseq            
             
 if __name__ == '__main__':
-    usage  = "usage: %prog -i <input sequence file>"
+    usage  = "usage: %prog -i <input sequence file> [-g]"
     parser = OptionParser(usage)
     parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="Input sequence file.")
     parser.add_option("-g", "--gc", dest="gc_content", action="store_true", default=False, help="stratify by gene GC content")
