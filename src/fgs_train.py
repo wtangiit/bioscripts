@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 
-'''fgs_train.py: produce needed training data set for running FragGeneScan HMM model'''
+'''fgs_train.py: produce needed training data set for running FragGeneScan HMM model
+
+Usage:
+
+fgs_train.py -i input.csv [-g]
+
+with -g, it will stratify genes by gc content (from 26% to 70%)
+without -g, it will not stratify, but for compatibility with FragGeneScan, 
+the output file also contains 45 groups of probability data, only difference 
+is that every group has the same data.
+''' 
+
 
 import os
 from optparse import OptionParser
