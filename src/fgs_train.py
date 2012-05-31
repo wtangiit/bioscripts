@@ -62,13 +62,21 @@ def parse_input_file(filename):
     '''parse the input file'''
     infile = open(filename, "r")
     seq_lists = []
+    linenumber = 0    
     for line in infile:
         line = line.strip('\n')
         line = line.strip('\r')
         splits = line.split('\t')
-        
+        linenumber += 1
         if len(splits) == 3:
-            if len(splits[2]) > 0:
+            seq_len = len(splits[2])
+            if seq_len > 0:
+                if seq_len < 123:
+                    print "**********************************************"
+                    print "Warning!!:the input data contains invalid data, line %d, sequence length=%s" % (linenumber, seq_len)
+                    print "The invalid sequence is thrown out to continue, but replacing input data and re-training is suggested." 
+                    print "**********************************************"
+                    continue
                 seq_lists.append(splits[2])
     return seq_lists
     
@@ -269,6 +277,14 @@ if __name__ == '__main__':
     parser.add_option("-g", "--gc", dest="gc_content", action="store_true", default=False, help="stratify by gene GC content")
     
     (opts, args) = parser.parse_args()
+    
+    STRATIFY = opts.gc_content
+    
+    msg = "Stratify= %s" % STRATIFY
+    if STRATIFY==False:
+        msg += ", use -g to enable gc_content stratification"
+    print msg    
+ 
     if not (opts.input and os.path.isfile(opts.input) ):
         parser.error("Missing input file %s"%(opts.input, ))
         
@@ -277,12 +293,7 @@ if __name__ == '__main__':
     seq_list = parse_input_file(inputFile)
     print "total # of sequences=", len(seq_list)
     
-    STRATIFY = opts.gc_content
-    
-    msg = "Stratify= %s" % STRATIFY
-    if STRATIFY==False:
-        msg += ", use -g to enable gc_content stratification"
-    print msg
+
     
     train_gene_transition_two_way(seq_list)
     train_start_stop_adjacent_prob(seq_list)
