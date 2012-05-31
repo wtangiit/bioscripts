@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 '''fgs_train.py: produce needed training data set for running FragGeneScan HMM model
+file can be trained: gene, rgene, noncoding, start, end, start1, end1
 
 Usage:
 
-fgs_train.py -i input.csv [-g]
+fgs_train.py -i input_gene_seq.csv [-n input_noncoding_seq.csv] [-g]
 
 with -g, it will stratify genes by gc content (from 26% to 70%)
 without -g, it will not stratify, but for compatibility with FragGeneScan, 
@@ -15,6 +16,8 @@ is that every group has the same data.
 
 import os
 from optparse import OptionParser
+
+nt_list = ['A', 'C', 'G', 'T']
 
 nt_dict = {'A':0, 'C': 1, 'G':2, 'T':3, 
            'a':0, 'c':1, 'g':2, 't':3}
@@ -65,15 +68,14 @@ def parse_input_file(filename):
         splits = line.split('\t')
         
         if len(splits) == 3:
-            seq_lists.append(splits[2])
+            if len(splits[2]) > 0:
+                seq_lists.append(splits[2])
     return seq_lists
     
 def train_gene_transition(seq_list, output_file):
     '''train transition probability of matching states'''
     
     e_M_counts = [[[[0 for i in range(4)] for j in range(16)] for m in range(6)] for g in range(NUM_STRATIFY) ]
-        
-    total_nt = 0
         
     for seq in seq_list:
         
@@ -91,9 +93,7 @@ def train_gene_transition(seq_list, output_file):
             from1 = nt_dict.get(seq[i-1], -1)
             if from0 >= 0 and from1 >= 0:
                 from2 = from0 * 4 + from1
-            
-            e_M_counts[gc_content-MIN_GC_CONTENT][m][from2][to] += 1
-            total_nt += 1
+                e_M_counts[gc_content-MIN_GC_CONTENT][m][from2][to] += 1
             
     gene_file = open(output_file, "w")
     
@@ -212,17 +212,66 @@ def get_reverse_complement(seq):
     for ch in seq:
         rseq += complement_dict[ch]
     return rseq            
+
+def train_non_coding(seq_list):
+    '''train noncoding file'''
+    
+    r_r_counts = [[[0 for i in range(4)] for j in range(4)] for g in range(NUM_STRATIFY)]
+        
+    for seq in seq_list:
+        if STRATIFY:
+            gc_content = get_gc_content(seq)
+        else:
+            gc_content = MIN_GC_CONTENT        
+        
+        for t in range(len(seq)-1):
+            fr = nt_dict.get(seq[t], -1)
+            to = nt_dict.get(seq[t+1], -1)
+                  
+            if fr >= 0 and to >= 0:
+                r_r_counts[gc_content - MIN_GC_CONTENT][fr][to] += 1
+            
+    noncoding_file = open("noncoding", "w")
+    
+    for gc in range(MIN_GC_CONTENT, MAX_GC_CONTENT+1):
+        line = "%s\n" % gc
+        noncoding_file.write(line)
+        
+        if STRATIFY:
+            k = gc
+        else:
+            k = MIN_GC_CONTENT  
+        
+        for j in range(4):
+            total_ct = sum(r_r_counts[k - MIN_GC_CONTENT][j])
+            for i in range(4):
+                #  print dimer_list[j],
+                line = "";
+                for i in range(4):
+                    if total_ct > 0:
+                        prob = round(float(r_r_counts[k-MIN_GC_CONTENT][j][i]) / total_ct, 4)
+                    else:
+                        prob = 0
+                    line += str(prob)
+                    line += '\t'
+                line = line.strip('\t')
+                line += ('\n')
+                noncoding_file.write(line)                    
+                                  
+    noncoding_file.close()
+    print "output file produced: noncoding"                                
             
 if __name__ == '__main__':
-    usage  = "usage: %prog -i <input sequence file> [-g]"
+    usage  = "usage: %prog -i <input sequence file> -n <input noncoding file> [-g]"
     parser = OptionParser(usage)
-    parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="Input sequence file.")
+    parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="Input gene sequence file.")
+    parser.add_option("-n", "--noncoding",  dest="noncoding", type = "string", default=None, help="Input noncoding sequence file.")
     parser.add_option("-g", "--gc", dest="gc_content", action="store_true", default=False, help="stratify by gene GC content")
     
     (opts, args) = parser.parse_args()
     if not (opts.input and os.path.isfile(opts.input) ):
         parser.error("Missing input file %s"%(opts.input, ))
-    
+        
     inputFile = opts.input 
     
     seq_list = parse_input_file(inputFile)
@@ -236,7 +285,11 @@ if __name__ == '__main__':
     print msg
     
     train_gene_transition_two_way(seq_list)
-        
     train_start_stop_adjacent_prob(seq_list)
+    
+    if opts.noncoding and os.path.isfile(opts.noncoding):
+        noncoding_seq_list = parse_input_file(opts.noncoding)
+        train_non_coding(noncoding_seq_list)
+        
         
     
