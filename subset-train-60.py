@@ -15,7 +15,6 @@ urpose: produces tables of sequence subsets corresponding to genes '''
   parser.add_option("-f", "--fasta", dest="fasta", action="store_true", default=False, help="Fasta output (default csv)")
   parser.add_option("-t", "--tab", dest="tabsep", action="store_true", default=False,  help="Tab separated")
 
-  
   (opts, args) = parser.parse_args()
   buf = int(opts.buf)
   if not (opts.input and os.path.isfile(opts.input) ):
@@ -57,7 +56,7 @@ urpose: produces tables of sequence subsets corresponding to genes '''
           if opts.fasta:
             print ">%s_%s-%s_%s_plusminus%d length=%d"%(label, start, stop, direction, buf, (stop-start))
           else:
-            print "%s_%s-%s_%s_plusminus%d\tl%d\t"%(label, start, stop, direction, buf, (stop-start)),
+            print "%s_%s-%s_%s_plusminus%d\t%d\t"%(label, start, stop, direction, buf, (stop-start)),
           seq = str(record.seq[int(start)-1-downstream:int(stop)+upstream].reverse_complement() )
           print seq
   in_handle.close()
