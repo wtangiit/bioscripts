@@ -40,7 +40,7 @@ def trimer_to_int(triplet):
     t2 = nt_dict.get(triplet[1])
     t3 = nt_dict.get(triplet[2])
     
-    if t1 >= 0 and t1 >=0 and t2 >=0:
+    if t1 >= 0 and t2 >=0 and t3 >=0:
         return t1 * 16 + t2 * 4 + t3
     else:
         return -1
@@ -218,7 +218,10 @@ def get_reverse_complement(seq):
     seq = seq[::-1]
     rseq= ""
     for ch in seq:
+      try:
         rseq += complement_dict[ch]
+      except KeyError:
+        rseq += "N"
     return rseq            
 
 def train_non_coding(seq_list):
