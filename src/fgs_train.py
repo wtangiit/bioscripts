@@ -40,7 +40,7 @@ def trimer_to_int(triplet):
     t2 = nt_dict.get(triplet[1])
     t3 = nt_dict.get(triplet[2])
     
-    if t1 >= 0 and t1 >=0 and t2 >=0:
+    if t1 >= 0 and t2 >=0 and t3 >=0:
         return t1 * 16 + t2 * 4 + t3
     else:
         return -1
@@ -51,7 +51,8 @@ def get_gc_content(sequence):
     for ch in sequence:
         if ch in ['G', 'C', 'g', 'c']:
             gc_count += 1
-    gc_content = int(round(float(gc_count) / len(sequence), 2) * 100)
+#    print "%f\t%f\t%f"%(float(gc_count) / len(sequence), round(float(gc_count) / len(sequence), 2) * 100, int(round(float(gc_count) / len(sequence), 2) * 100)  ) 
+    gc_content = int(float(gc_count) / len(sequence) * 100+.5)
     if gc_content < MIN_GC_CONTENT:
         gc_content = MIN_GC_CONTENT
     if gc_content > MAX_GC_CONTENT:
@@ -89,10 +90,11 @@ def train_gene_transition(seq_list, output_file):
         
         if STRATIFY:
             gc_content = get_gc_content(seq)
+            
         else:
             gc_content = MIN_GC_CONTENT        
         
-        #print "gc_content=", gc_content
+#        print "gc_content=", gc_content
         
         for i in range(60, len(seq)-63):  #iterate coding NTs
             m = i % 6  #m = 0..5 representing M state from11..6
@@ -174,7 +176,7 @@ def train_start_stop_adjacent_prob(seq_list):
             gc_content = get_gc_content(seq)
         else:
             gc_content = MIN_GC_CONTENT        
-        
+            os.stderr.write("%d\n"%gc_content); 
         for key in prob_counts_dict.keys():
             subseq = get_start_stop_subseq(seq, key)
             for i in range(61):
@@ -218,7 +220,10 @@ def get_reverse_complement(seq):
     seq = seq[::-1]
     rseq= ""
     for ch in seq:
+      try:
         rseq += complement_dict[ch]
+      except KeyError:
+        rseq += "N"
     return rseq            
 
 def train_non_coding(seq_list):
