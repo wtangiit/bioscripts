@@ -54,15 +54,23 @@ if __name__ == '__main__':
     buf = int(opts.buf)
     if not (opts.input and os.path.isfile(opts.input) ):
         parser.error("Missing input file %s"%(opts.input, ))
-    if not (opts.ptt and os.path.isfile(opts.ptt) ):
-        parser.error("Missing input file %s"%(opts.ptt, ))
+        
+    if not opts.ptt:
+        pttfile = os.path.splitext(opts.input)[0] + ".ptt"
+    else:
+        pttfile = opts.ptt
+        
+    if not os.path.isfile(pttfile):
+        parser.error("Missing input ptt file %s"%(pttfile))
+        
+    print "inputfile=%s, ptt file=%s, buf=%s" % (opts.input, pttfile, buf)
     upstream = buf
     downstream = buf
-    print "upstream buf=%s, downstream buf=%s\n" % (upstream, downstream)
+    
     if opts.verbose: 
-        sys.stderr.write("Processing %s and %s... \n"%(opts.input, opts.ptt))
+        sys.stderr.write("Processing %s and %s... \n"%(opts.input, pttfile))
     in_handle  = open(opts.input)
-    ptt_handle = open(opts.ptt)
+    ptt_handle = open(pttfile)
     record=SeqIO.parse(in_handle, "fasta").next()
     
     bitmap_fwd = [0 for i in range(len(record))]
@@ -93,7 +101,8 @@ if __name__ == '__main__':
                 label=""
             if direction == "+":
                 if start-1-upstream < 0 or stop+downstream > len(record.seq):
-                    sys.stderr.write("problem with %s out of range. \n"%(label))
+                    #sys.stderr.write("problem with %s out of range. \n"%(label))
+                    pass
                 else:
                     msg = ""
                     if opts.fasta:
@@ -116,7 +125,8 @@ if __name__ == '__main__':
                      
             if direction == "-":
                 if start-1-downstream  < 0 or stop + upstream > len(record.seq):
-                    sys.stderr.write("problem with %s out of range. \n"%(label))
+                    #sys.stderr.write("problem with %s out of range. \n"%(label))
+                    pass
                 else:
                     msg = ""
                     if opts.fasta:
