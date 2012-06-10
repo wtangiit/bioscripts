@@ -58,6 +58,7 @@ if __name__ == '__main__':
         parser.error("Missing input file %s"%(opts.ptt, ))
     upstream = buf
     downstream = buf
+    print "upstream buf=%s, downstream buf=%s\n" % (upstream, downstream)
     if opts.verbose: 
         sys.stderr.write("Processing %s and %s... \n"%(opts.input, opts.ptt))
     in_handle  = open(opts.input)
@@ -101,7 +102,8 @@ if __name__ == '__main__':
                     else:
                         #print "%s_%s-%s_%s_plusminus%d\t%d\t"%(label, start, stop, direction, buf, (stop-start)),
                         msg += "%s_%s-%s_%s_plusminus%d\t%d\t"%(label, start, stop, direction, buf, (stop-start))
-                    seq = str(record.seq[(int(start)-1):(int(stop))])
+                    #seq = str(record.seq[(int(start)-1):(int(stop))])
+                    seq = str(record.seq[(int(start)-1-upstream):(int(stop)+downstream)])
           
                     #print seq
                     msg += seq
@@ -124,7 +126,8 @@ if __name__ == '__main__':
                     #   print "%s_%s-%s_%s_plusminus%d\t%d\t"%(label, start, stop, direction, buf, (stop-start)),
                         msg += "%s_%s-%s_%s_plusminus%d\t%d\t"%(label, start, stop, direction, buf, (stop-start))
                         
-                    seq = str(record.seq[int(start)-1:int(stop)].reverse_complement())
+                    #seq = str(record.seq[int(start)-1:int(stop)].reverse_complement())
+                    seq = str(record.seq[int(start)-1-downstream:int(stop)+upstream].reverse_complement() )
                     
                     #print seq
                     msg+= seq
