@@ -60,7 +60,7 @@ def get_gc_content(sequence):
         gc_content = MAX_GC_CONTENT
     return gc_content
 
-def parse_input_file(filename):
+def parse_input_file(filename, noncoding=False):
     '''parse the input file'''
     infile = open(filename, "r")
     seq_lists = []
@@ -73,7 +73,7 @@ def parse_input_file(filename):
         if len(splits) == 3:
             seq_len = len(splits[2])
             if seq_len > 0:
-                if seq_len < 123:
+                if not noncoding and seq_len < 123:
                     print "**********************************************"
                     print "Warning!!:the input data contains invalid data, line %d, sequence length=%s" % (linenumber, seq_len)
                     print "The invalid sequence is thrown out to continue, but replacing input data and re-training is suggested." 
@@ -309,11 +309,11 @@ if __name__ == '__main__':
     
 
     
-    train_gene_transition_two_way(seq_list)
-    train_start_stop_adjacent_prob(seq_list)
+    #train_gene_transition_two_way(seq_list)
+    #train_start_stop_adjacent_prob(seq_list)
     
     if opts.noncoding and os.path.isfile(opts.noncoding):
-        noncoding_seq_list = parse_input_file(opts.noncoding)
+        noncoding_seq_list = parse_input_file(opts.noncoding, noncoding=True)
         train_non_coding(noncoding_seq_list)
         
         
