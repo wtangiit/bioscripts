@@ -133,10 +133,9 @@ def calc_pwm_score(seq_list, matrix, type="start"):
         
         score = 0
         for i in range(61):
-            if type=="start" or type=="end1":
-                if i==30:
-                    continue
-            elif type=="end" and i==60:
+            
+            #skip stop codon when calculating (start codon is not skipped)
+            if type=="end" and i==60:
                 continue
             elif type=="start1" and i==0:
                 continue
