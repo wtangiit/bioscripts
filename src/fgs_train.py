@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''fgs_train.py: produce needed training data set for running FragGeneScan HMM model
-file can be trained: gene, rgene, noncoding, start, end, start1, end1
+file can be trained: gene, rgene, noncoding, start, stop, start1, stop1
 
 Usage:
 
@@ -150,17 +150,17 @@ def train_gene_transition_two_way(seq_list):
     train_gene_transition(rc_req_list, "rgene") 
     
 def get_start_stop_subseq(seq, key):
-    '''return the subsequence to check for training start/end/start1/end1'''
+    '''return the subsequence to check for training start/stop/start1/stop1'''
     
     rc_seq = get_reverse_complement(seq)
     
     if key=="start":
         subseq = seq[30:93]
-    elif key=="end":
+    elif key=="stop":
         subseq = seq[-123:-60]
     elif key=="start1":
         subseq = rc_seq[-93:-30]
-    elif key=="end1":
+    elif key=="stop1":
         subseq = rc_seq[60:123]
     else:
         subseq = seq
@@ -168,12 +168,12 @@ def get_start_stop_subseq(seq, key):
     
     
 def train_start_stop_adjacent_prob(seq_list):
-    '''train start, end, start1, end1, stratify by gene GC content'''
+    '''train start, stop, start1, stop1, stratify by gene GC content'''
     
     prob_counts_dict = {"start": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
-                        "end" : [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
+                        "stop" : [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
                         "start1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
-                        "end1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)]}
+                        "stop1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)]}
                         
     for seq in seq_list:
         
