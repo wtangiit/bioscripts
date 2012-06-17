@@ -3,9 +3,18 @@
 '''
 calc.pwm.py
 calculate PWM scores for given sequences and start/stop matrix
+
+input: 
+the sequences file used for training (passed by argument -i)
+the matrix files (start, stop, start1, stop1) should be existed in the working directory
+
+output: 
+pwm parameter file: 
+[input].pwm
+
+Optional with argument -r, output files containing raw score lists: 
+start.pwm, stop.pwm, start1.pwm, stop1.pwm
 ''' 
-
-
 import os
 import math
 from optparse import OptionParser
@@ -17,8 +26,6 @@ nt_dict = {'A':0, 'C': 1, 'G':2, 'T':3,
 
 complement_dict = {'A':'T', 'C': 'G', 'G':'C', 'T':'A', 
            'a':'t', 'c':'g', 'g':'c', 't':'a'}
-
-STRATIFY = False
 
 MIN_GC_CONTENT = 26
 MAX_GC_CONTENT = 70
@@ -120,12 +127,12 @@ def calc_pwm_score(seq_list, matrix, type="start"):
         
         if type=="start":
             subseq = seq[30:93]
-        elif type=="end":
+        elif type=="stop":
             subseq = seq[-123:-60]
         elif type=="start1":
             rc_seq = get_reverse_complement(seq)
             subseq = rc_seq[-93:-30]
-        elif type=="end1":
+        elif type=="stop1":
             rc_seq = get_reverse_complement(seq)
             subseq = rc_seq[60:123]
         else:
@@ -135,7 +142,7 @@ def calc_pwm_score(seq_list, matrix, type="start"):
         for i in range(61):
             
             #skip stop codon when calculating (start codon is not skipped)
-            if type=="end" and i==60:
+            if type=="stop" and i==60:
                 continue
             elif type=="start1" and i==0:
                 continue
@@ -146,39 +153,87 @@ def calc_pwm_score(seq_list, matrix, type="start"):
         
         score_dict[gc_content].append(score)
     return score_dict
-                                    
             
 if __name__ == '__main__':
     usage  = "usage: %prog -i <input sequence file> -n <input noncoding file> [-g]"
     parser = OptionParser(usage)
     parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="Input gene sequence file.")
-    parser.add_option("-m", "--matrix",  dest="matrix", type = "string", default=None, help="start or stop matrix.")
-    parser.add_option("-t", "--type",  dest="type", type = "string", default=None, help="type of matrix (start, stop, start1, stop1).")
-    parser.add_option("-g", "--gc", dest="gc_content", action="store_true", default=False, help="stratify by gene GC content")
+    parser.add_option("-r", "--raw_scores",  dest="raw_scores", action = "store_true", default=False, 
+                      help="Output raw scores (start.pwm, stop.pwm, start1.pwm, stop1.pwm).")
     
     (opts, args) = parser.parse_args()
     
-    STRATIFY = opts.gc_content
-    
-    msg = "Stratify= %s" % STRATIFY
-    if STRATIFY==False:
-        msg += ", use -g to enable gc_content stratification"
-    print msg    
- 
     if not (opts.input and os.path.isfile(opts.input) ):
-        parser.error("Missing input file %s"%(opts.input, ))
+        parser.error("Missing input sequence file %s"%(opts.input, ))
         
     inputFile = opts.input 
     
     seq_list = parse_input_file(inputFile)
     print "total # of sequences=", len(seq_list)
     
+    matrix_files = ["start", "stop", "start1", "stop1"]
     
-    if opts.matrix:
-        matrix = parse_matrix(opts.matrix)
-        score_dict = calc_pwm_score(seq_list, matrix)
-        
-        for i in range(26, 71):
-            print i
-            if score_dict.has_key(i):
-                print score_dict[i]
+    pwm_file_name = inputFile + ".pwm"
+    
+    parameter_array = [[[0 for p in range(3)] for m in range(4)] for g in range(45)]
+    
+    #parameter_index  0: deviation  1: mean  2:   1/2* deviation * sqrt(2*pi))   
+    parameter_index = 0
+    #matrix_index    0: start;  1: stop;  2: start1;  3; stop1
+    matrix_index = -1
+    
+    for matrix_file in matrix_files:
+        matrix_index += 1
+        if os.path.isfile(matrix_file):
+            print "processing matrix file: ", matrix_file
+            if opts.raw_scores:
+                outfile_name = matrix_file + ".pwm"
+                outfile = open(matrix_file+".pwm", "w")
+            
+            matrix = parse_matrix(matrix_file)
+            score_dict = calc_pwm_score(seq_list, matrix)
+            
+            for gc in range(26, 71):
+                #print "gc content=", gc
+                if score_dict.has_key(gc):
+                    mean = sum(score_dict[gc]) / len(score_dict[gc])
+                    variance  = 0 
+                    for score in score_dict[gc]:
+                        variance += (score - mean)**2
+                    variance = variance / len(score_dict[gc])
+                    deviation = math.sqrt(variance)
+                    coeff = 1 / (2* deviation * math.sqrt(2*math.pi))
+                    
+                    parameter_array[gc-26][matrix_index][0] = deviation
+                    parameter_array[gc-26][matrix_index][1] = mean
+                    parameter_array[gc-26][matrix_index][2] = coeff
+                    
+                    #output raw scores to files (optional)                    
+                    if opts.raw_scores:
+                        outfile.write("%d\n" % gc)
+                        if score_dict.has_key(gc):
+                            line = ""
+                            for item in score_dict[gc]:
+                                line += "%.4f " % item
+                                line = line.strip(' ')
+                                line += '\n'
+                            outfile.write(line)
+                                
+            if opts.raw_scores:
+                outfile.close()
+                print "file of raw scores generated: ", outfile_name
+                            
+    #output pwm parameter file
+    pwm_file_name = inputFile + ".pwm"
+    pwm_file = open(pwm_file_name, "w")
+    for gc in range(26, 71):
+        pwm_file.write("%s\n" % gc)
+        for m in range(4):
+            line = ""
+            for p in range(3):
+                line += "%.4f\t" % round(parameter_array[gc-26][m][p], 4)
+            line.strip('\t')
+            line += '\n'
+            pwm_file.write(line)
+    pwm_file.close()
+    print "pwm parameter file generated:", pwm_file_name                
