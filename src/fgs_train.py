@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''fgs_train.py: produce needed training data set for running FragGeneScan HMM model
-file can be trained: gene, rgene, noncoding, start, end, start1, end1
+file can be trained: gene, rgene, noncoding, start, stop, start1, stop1
 
 Usage:
 
@@ -52,14 +52,15 @@ def get_gc_content(sequence):
         if ch in ['G', 'C', 'g', 'c']:
             gc_count += 1
 #    print "%f\t%f\t%f"%(float(gc_count) / len(sequence), round(float(gc_count) / len(sequence), 2) * 100, int(round(float(gc_count) / len(sequence), 2) * 100)  ) 
-    gc_content = int(float(gc_count) / len(sequence) * 100+.5)
+    gc_content = int(float(gc_count) / len(sequence) * 100 + 0.5)
+    #print "gc countent %s rounded to %s" % (float(gc_count) / len(sequence) * 100, gc_content)
     if gc_content < MIN_GC_CONTENT:
         gc_content = MIN_GC_CONTENT
     if gc_content > MAX_GC_CONTENT:
         gc_content = MAX_GC_CONTENT
     return gc_content
 
-def parse_input_file(filename):
+def parse_input_file(filename, noncoding=False):
     '''parse the input file'''
     infile = open(filename, "r")
     seq_lists = []
@@ -72,7 +73,7 @@ def parse_input_file(filename):
         if len(splits) == 3:
             seq_len = len(splits[2])
             if seq_len > 0:
-                if seq_len < 123:
+                if not noncoding and seq_len < 123:
                     print "**********************************************"
                     print "Warning!!:the input data contains invalid data, line %d, sequence length=%s" % (linenumber, seq_len)
                     print "The invalid sequence is thrown out to continue, but replacing input data and re-training is suggested." 
@@ -119,14 +120,18 @@ def train_gene_transition(seq_list, output_file):
         for m in range(6):
         #print "position=", m+1
             for j in range(16):
-                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j])
+                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j]) + 1
                 #  print dimer_list[j],
                 line = "";
                 for i in range(4):
                     if total_ct > 0:
-                        prob = round(float(e_M_counts[k-MIN_GC_CONTENT][m][j][i]) / total_ct, 4)
+                        ct = e_M_counts[k-MIN_GC_CONTENT][m][j][i]
+                        if ct == 0:
+                            prob = 0.0001
+                        else:
+                            prob = round(float(ct) / total_ct, 4)
                     else:
-                        
+                        prob = 0.0001
                     line += str(prob)
                     line += '\t'
                 line = line.strip('\t')
@@ -145,17 +150,17 @@ def train_gene_transition_two_way(seq_list):
     train_gene_transition(rc_req_list, "rgene") 
     
 def get_start_stop_subseq(seq, key):
-    '''return the subsequence to check for training start/end/start1/end1'''
+    '''return the subsequence to check for training start/stop/start1/stop1'''
     
     rc_seq = get_reverse_complement(seq)
     
     if key=="start":
         subseq = seq[30:93]
-    elif key=="end":
+    elif key=="stop":
         subseq = seq[-123:-60]
     elif key=="start1":
         subseq = rc_seq[-93:-30]
-    elif key=="end1":
+    elif key=="stop1":
         subseq = rc_seq[60:123]
     else:
         subseq = seq
@@ -163,12 +168,12 @@ def get_start_stop_subseq(seq, key):
     
     
 def train_start_stop_adjacent_prob(seq_list):
-    '''train start, end, start1, end1, stratify by gene GC content'''
+    '''train start, stop, start1, stop1, stratify by gene GC content'''
     
     prob_counts_dict = {"start": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
-                        "end" : [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
+                        "stop" : [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
                         "start1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)],
-                        "end1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)]}
+                        "stop1": [[[0 for i in range(64)] for j in range(61)] for g in range(NUM_STRATIFY)]}
                         
     for seq in seq_list:
         
@@ -176,7 +181,7 @@ def train_start_stop_adjacent_prob(seq_list):
             gc_content = get_gc_content(seq)
         else:
             gc_content = MIN_GC_CONTENT        
-            os.stderr.write("%d\n"%gc_content); 
+            #os.stderr.write("%d\n"%gc_content); 
         for key in prob_counts_dict.keys():
             subseq = get_start_stop_subseq(seq, key)
             for i in range(61):
@@ -204,9 +209,9 @@ def write_start_stop_file(filename, prob_counts):
             total_ct = sum(prob_counts[k - MIN_GC_CONTENT][i])
             for j in range(64):
                 if total_ct > 0:
-                    prob = round(float(prob_counts[k - MIN_GC_CONTENT][i][j]) / total_ct, 4)
+                    prob = round(float(prob_counts[k - MIN_GC_CONTENT][i][j] + 1) / (total_ct + 1), 6)
                 else:
-                    prob = 0.0001
+                    prob = 0.000001
                 line += str(prob)
                 line += '\t'
             line = line.strip('\t')
@@ -220,10 +225,10 @@ def get_reverse_complement(seq):
     seq = seq[::-1]
     rseq= ""
     for ch in seq:
-      try:
-        rseq += complement_dict[ch]
-      except KeyError:
-        rseq += "N"
+        try:
+            rseq += complement_dict[ch]
+        except KeyError:
+            rseq += "N"
     return rseq            
 
 def train_non_coding(seq_list):
@@ -262,7 +267,11 @@ def train_non_coding(seq_list):
                 line = "";
                 for i in range(4):
                     if total_ct > 0:
-                        prob = round(float(r_r_counts[k-MIN_GC_CONTENT][j][i]) / total_ct, 4)
+                        ct = r_r_counts[k-MIN_GC_CONTENT][j][i]
+                        if ct == 0:
+                            prob = 0.0001
+                        else:
+                            prob = round(float(ct) / total_ct, 4)
                     else:
                         prob = 0.0001
                     line += str(prob)
@@ -298,13 +307,11 @@ if __name__ == '__main__':
     seq_list = parse_input_file(inputFile)
     print "total # of sequences=", len(seq_list)
     
-
-    
     train_gene_transition_two_way(seq_list)
     train_start_stop_adjacent_prob(seq_list)
     
     if opts.noncoding and os.path.isfile(opts.noncoding):
-        noncoding_seq_list = parse_input_file(opts.noncoding)
+        noncoding_seq_list = parse_input_file(opts.noncoding, noncoding=True)
         train_non_coding(noncoding_seq_list)
         
         
