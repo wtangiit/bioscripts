@@ -126,11 +126,10 @@ def train_gene_transition(seq_list, output_file):
                 for i in range(4):
                     if total_ct > 0:
                         ct = e_M_counts[k-MIN_GC_CONTENT][m][j][i]
-                        if ct == 0:
-                            prob = 0.0001
-                        else:
-                            prob = round(float(ct) / total_ct, 4)
+                        prob = round(float(ct) / total_ct, 4)
                     else:
+                        prob = 0.0001
+                    if prob < 0.0001:
                         prob = 0.0001
                     line += str(prob)
                     line += '\t'
@@ -212,6 +211,8 @@ def write_start_stop_file(filename, prob_counts):
                     prob = round(float(prob_counts[k - MIN_GC_CONTENT][i][j] + 1) / (total_ct + 1), 6)
                 else:
                     prob = 0.000001
+                if prob < 0.000001:
+                    prob = 0.000001
                 line += str(prob)
                 line += '\t'
             line = line.strip('\t')
@@ -273,6 +274,8 @@ def train_non_coding(seq_list):
                         else:
                             prob = round(float(ct) / total_ct, 4)
                     else:
+                        prob = 0.0001
+                    if prob < 0.0001:
                         prob = 0.0001
                     line += str(prob)
                     line += '\t'
