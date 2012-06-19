@@ -120,16 +120,15 @@ def train_gene_transition(seq_list, output_file):
         for m in range(6):
         #print "position=", m+1
             for j in range(16):
-                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j]) + 1
+                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j])
                 #  print dimer_list[j],
                 line = "";
                 for i in range(4):
                     if total_ct > 0:
                         ct = e_M_counts[k-MIN_GC_CONTENT][m][j][i]
-                        if ct == 0:
-                            prob = 0.0001
-                        else:
-                            prob = round(float(ct) / total_ct, 4)
+                        prob = round(float(ct) / total_ct, 4)
+                        if prob < 0.001:
+                            prob = 0.001
                     else:
                         prob = 0.0001
                     line += str(prob)
@@ -212,6 +211,8 @@ def write_start_stop_file(filename, prob_counts):
                     prob = round(float(prob_counts[k - MIN_GC_CONTENT][i][j] + 1) / (total_ct + 1), 6)
                 else:
                     prob = 0.000001
+                if prob < 0.000001:
+                    prob = 0.000001
                 line += str(prob)
                 line += '\t'
             line = line.strip('\t')
@@ -272,6 +273,8 @@ def train_non_coding(seq_list):
                             prob = 0.0001
                         else:
                             prob = round(float(ct) / total_ct, 4)
+                            if prob < 0.001:
+                                prob = 0.001
                     else:
                         prob = 0.0001
                     line += str(prob)

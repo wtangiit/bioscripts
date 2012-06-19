@@ -215,8 +215,8 @@ if __name__ == '__main__':
                             line = ""
                             for item in score_dict[gc]:
                                 line += "%.4f " % item
-                                line = line.strip(' ')
-                                line += '\n'
+                            line = line.strip(' ')
+                            line += '\n'
                             outfile.write(line)
                                 
             if opts.raw_scores:
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         for m in range(4):
             line = ""
             for p in range(3):
-                line += "%.4f\t" % round(parameter_array[gc-26][m][p], 4)
+                line += "%.4f\t" % parameter_array[gc-26][m][p]
             line.strip('\t')
             line += '\n'
             pwm_file.write(line)
