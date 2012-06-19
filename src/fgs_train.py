@@ -120,7 +120,7 @@ def train_gene_transition(seq_list, output_file):
         for m in range(6):
         #print "position=", m+1
             for j in range(16):
-                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j]) + 1
+                total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j])
                 #  print dimer_list[j],
                 line = "";
                 for i in range(4):
