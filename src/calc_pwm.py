@@ -48,6 +48,7 @@ def trimer_to_int(triplet):
 def get_gc_content(sequence):
     '''return gc_content% of a given sequence'''
     gc_count = 0
+    sequence=sequence[60:-63]
     for ch in sequence:
         if ch in ['G', 'C', 'g', 'c']:
             gc_count += 1
@@ -105,6 +106,8 @@ def parse_matrix(matrix_file):
         line = line.strip('\r')
         numbers = line.split()
         if len(numbers) == 1:
+            if numbers[0][0] == ">":
+                numbers[0] = numbers[0][1:]
             gc_index = int(numbers[0]) - 26
             pos_index = 0
         else:
@@ -155,7 +158,7 @@ def calc_pwm_score(seq_list, matrix, type="start"):
     return score_dict
             
 if __name__ == '__main__':
-    usage  = "usage: %prog -i <input sequence file> -n <input noncoding file> [-g]"
+    usage  = "usage: %prog -i <input sequence file> [-r]"
     parser = OptionParser(usage)
     parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="Input gene sequence file.")
     parser.add_option("-r", "--raw_scores",  dest="raw_scores", action = "store_true", default=False, 
@@ -236,4 +239,6 @@ if __name__ == '__main__':
             line += '\n'
             pwm_file.write(line)
     pwm_file.close()
-    print "pwm parameter file generated:", pwm_file_name                
+    print "pwm parameter file generated:", pwm_file_name     
+    
+           
