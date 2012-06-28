@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+'''plot_hist.py
+plot histogram plots to fit normal distribution for pwm scores.
+input: list of pwm score values, one list per line 
+output: the histogram fitting plots for each list of score values
+ e.g. start.pwm etc, which is the output of calc_pwm.py with '-r' specified
+'''
+
 import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
@@ -29,7 +36,7 @@ def plot_hist(x, mu, sigma, filename, gc):
     
     
 if __name__ == '__main__':
-    usage  = "usage: %prog -i <input file>"
+    usage  = "usage: %prog -i <input file, e.g. start.pwm>"
     parser = OptionParser(usage)
     parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="<input training data>")
     
