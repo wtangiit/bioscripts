@@ -22,8 +22,16 @@ nt_list = ['A', 'C', 'G', 'T']
 nt_dict = {'A':0, 'C': 1, 'G':2, 'T':3, 
            'a':0, 'c':1, 'g':2, 't':3}
 
+digit2nt = {0: 'A', 1:'C', 2:'G', 3:'T'}
+
 complement_dict = {'A':'T', 'C': 'G', 'G':'C', 'T':'A', 
            'a':'t', 'c':'g', 'g':'c', 't':'a'}
+
+stop_codons = ["TAG", "TAA", "TGA"]
+start1_codons = ["CTA", "TTA", "TCA"]
+ 
+start_codons = ["ATG", "GTG", "TTG"]
+stop1_codons = ["CAT", "CAC", "CAA"]
 
 STRATIFY = False
 
@@ -33,6 +41,7 @@ NUM_STRATIFY = 45
 NUM_M_STATE = 6
 NUM_DIMER = 16
 NUM_NT = 4
+
 
 def trimer_to_int(triplet):
     '''return number by triplet'''
@@ -86,6 +95,11 @@ def train_gene_transition(seq_list, output_file):
     '''train transition probability of matching states'''
     
     e_M_counts = [[[[0 for i in range(4)] for j in range(16)] for m in range(6)] for g in range(NUM_STRATIFY) ]
+    
+    if output_file == "gene":
+        stop_codon_list = stop_codons
+    if output_file == "rgene":
+        stop_codon_list = start1_codons
         
     for seq in seq_list:
         
@@ -98,7 +112,7 @@ def train_gene_transition(seq_list, output_file):
 #        print "gc_content=", gc_content
         
         for i in range(60, len(seq)-63):  #iterate coding NTs
-            m = i % 6  #m = 0..5 representing M state from11..6
+            m = i % 6  #m = 0..5 representing M state from 1..6
             to = nt_dict.get(seq[i], -1)
             from0 = nt_dict.get(seq[i-2], -1)
             from1 = nt_dict.get(seq[i-1], -1)
@@ -107,10 +121,12 @@ def train_gene_transition(seq_list, output_file):
                 e_M_counts[gc_content-MIN_GC_CONTENT][m][from2][to] += 1
             
     gene_file = open(output_file, "w")
+    ct_file = open(output_file+".ct", "w")
     
     for gc in range(MIN_GC_CONTENT, MAX_GC_CONTENT + 1):
         line = "%s\n" % gc
         gene_file.write(line)
+        ct_file.write(line)
         
         if STRATIFY:
             k = gc
@@ -122,22 +138,42 @@ def train_gene_transition(seq_list, output_file):
             for j in range(16):
                 total_ct = sum(e_M_counts[k - MIN_GC_CONTENT][m][j])
                 #  print dimer_list[j],
-                line = "";
+                line = ""
+                line_ct = ""
                 for i in range(4):
                     if total_ct > 0:
+                        codon = "%s%s%s" % (digit2nt[j/4], digit2nt[j%4], digit2nt[i])
+                        
                         ct = e_M_counts[k-MIN_GC_CONTENT][m][j][i]
                         prob = round(float(ct) / total_ct, 4)
+                        
                         if prob < 0.001:
                             prob = 0.001
+                            if codon in stop_codon_list and m in [2,5]:
+                                prob = 0.0001
+                                
+                        if codon in stop_codon_list and m in [2,5]:
+                            if ct > 0:
+                                print "inframe stop (start1) codon found %s: gc=%s, m=%s, count=%s/%s, prob=%f" % (codon, gc, m, ct, total_ct, float(ct)/total_ct) 
+             
                     else:
                         prob = 0.0001
                     line += str(prob)
                     line += '\t'
+                    
+                    line_ct += str(total_ct)
+                    line_ct += '\t'                    
+                    
                 line = line.strip('\t')
-                line += ('\n')
+                line += '\n'
                 gene_file.write(line)
+                
+                line_ct = line_ct.strip('\t')
+                line_ct += '\n'
+                ct_file.write(line_ct)
     
     gene_file.close()
+    ct_file.close()
     print "output file produced: %s" % output_file 
      
 def train_gene_transition_two_way(seq_list):
