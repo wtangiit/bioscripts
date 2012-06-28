@@ -27,7 +27,7 @@ def number2dimer(number):
     nt2 = digit2nt[digit2]
     return nt1+nt2    
 
-def list_fit(ylist, m, ij):
+def list_fit(ylist, m, ij, weight_line_values=[]):
     xi = arange(0,45)
     A = array([ xi, ones(45)])
 
@@ -55,7 +55,14 @@ def list_fit(ylist, m, ij):
         
         print "plotting line M%s:P(%s|%s), slope=%.4f, inception=%.4f" % (m, to_nt, from_dimer, w[0], w[1])
         
-    ax.legend((plots[0][1], plots[1][1], plots[2][1], plots[3][1]), ('A', 'C', 'G', 'T'), loc=0)
+    if len(weight_line_values) > 0: #plot weight line
+        ax2 = ax.twinx()
+        plots.append(ax2.plot(range(26, 71), weight_line_values, '-xm', markeredgewidth=1))
+        ax2.set_ylim(0, 400000)
+        ax2.set_ylabel('triplet count')
+        
+        
+    ax.legend((plots[0][1], plots[1][1], plots[2][1], plots[3][1], ), ('A', 'C', 'G', 'T'), loc=0)
             
     ax.set_xlabel('GC content')
     ax.set_ylabel('probability')
@@ -68,10 +75,8 @@ def list_fit(ylist, m, ij):
             
 def parse_file(filename):
     infile = open(filename, "r")
-    gc = 0
-    line_index = -1
-    
-    data_lists = [[[[] for k in range(4)] for ij in range(16)] for m in range(6)]
+
+    data_lists = [[[[] for k in range(4)] for ij in range(16)] for m in range(6)]# 6x16x4x[45]
         
     for g in range(45):
         line = infile.readline().strip('\n')
@@ -88,7 +93,6 @@ def gen_fitted_file(linear_parameters):
     '''generated a new trained gene transition model with fitted linear functions'''
     
     fit_data_lists = [[[[] for ij in range(16)] for m in range(6)] for g in range(45)] #45x6x16x4
-    
     
     for m in range(6):
         for ij in range(16):
@@ -128,18 +132,31 @@ if __name__ == '__main__':
     usage  = "usage: %prog -i <input training data>"
     parser = OptionParser(usage)
     parser.add_option("-i", "--input",  dest="input", type = "string", default=None, help="<input training data>")
+    parser.add_option("-w", "--weight",  dest="weight", type = "string", default=None, help="<input weighting data>")
     
     (opts, args) = parser.parse_args()
     
     data_lists = parse_file(opts.input)  #datalists array of 6x16x4x45
     
+    if opts.weight:
+        weight_lists = parse_file(opts.weight)
+            
     linear_parameter = [[[]for ij in range(16)] for m in range(6)]
     
     for m in range(6):
         for ij in range(16):
             ylist = data_lists[m][ij]    #ylist  4x45
             
-            parameters = list_fit(ylist, m, ij)
+            weight_line = []
+            
+            if opts.weight:
+                for g in range(45):
+                    weight_ct = weight_lists[m][ij][0][g]
+                    weight_line.append(weight_ct)
+                        
+            parameters = list_fit(ylist, m, ij, weight_line)
+            
+            
             linear_parameter[m][ij] = parameters
                 
     gen_fitted_file(linear_parameter)
