@@ -134,10 +134,12 @@ def calc_pwm_score(seq_list, matrix, type="start"):
             subseq = seq[-123:-60]
         elif type=="start1":
             rc_seq = get_reverse_complement(seq)
-            subseq = rc_seq[-93:-30]
+            #subseq = rc_seq[-93:-30]
+            subseq = rc_seq[60:123]
         elif type=="stop1":
             rc_seq = get_reverse_complement(seq)
-            subseq = rc_seq[60:123]
+            #subseq = rc_seq[60:123]
+            subseq = rc_seq[-93:-30]
         else:
             subseq = seq
         
