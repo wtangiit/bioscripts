@@ -299,25 +299,24 @@ def train_non_coding(seq_list):
         
         for j in range(4):
             total_ct = sum(r_r_counts[k - MIN_GC_CONTENT][j])
+            #  print dimer_list[j],
+            line = "";
             for i in range(4):
-                #  print dimer_list[j],
-                line = "";
-                for i in range(4):
-                    if total_ct > 0:
-                        ct = r_r_counts[k-MIN_GC_CONTENT][j][i]
-                        if ct == 0:
-                            prob = 0.0001
-                        else:
-                            prob = round(float(ct) / total_ct, 4)
-                            if prob < 0.001:
-                                prob = 0.001
-                    else:
+                if total_ct > 0:
+                    ct = r_r_counts[k-MIN_GC_CONTENT][j][i]
+                    if ct == 0:
                         prob = 0.0001
-                    line += str(prob)
-                    line += '\t'
-                line = line.strip('\t')
-                line += ('\n')
-                noncoding_file.write(line)                    
+                    else:
+                        prob = round(float(ct) / total_ct, 4)
+                        if prob < 0.0001:
+                            prob = 0.0001
+                else:
+                    prob = 0.0001
+                line += str(prob)
+                line += '\t'
+            line = line.strip('\t')
+            line += ('\n')
+            noncoding_file.write(line)                    
                                   
     noncoding_file.close()
     print "output file produced: noncoding"                                
@@ -343,11 +342,11 @@ if __name__ == '__main__':
         
     inputFile = opts.input 
     
-    seq_list = parse_input_file(inputFile)
-    print "total # of sequences=", len(seq_list)
+    #seq_list = parse_input_file(inputFile)
+    #print "total # of sequences=", len(seq_list)
     
-    train_gene_transition_two_way(seq_list)
-    train_start_stop_adjacent_prob(seq_list)
+    #train_gene_transition_two_way(seq_list)
+    #train_start_stop_adjacent_prob(seq_list)
     
     if opts.noncoding and os.path.isfile(opts.noncoding):
         noncoding_seq_list = parse_input_file(opts.noncoding, noncoding=True)
