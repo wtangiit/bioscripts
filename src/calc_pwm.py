@@ -134,12 +134,10 @@ def calc_pwm_score(seq_list, matrix, type="start"):
             subseq = seq[-123:-60]
         elif type=="start1":
             rc_seq = get_reverse_complement(seq)
-            #subseq = rc_seq[-93:-30]
-            subseq = rc_seq[60:123]
+            subseq = rc_seq[-93:-30]
         elif type=="stop1":
             rc_seq = get_reverse_complement(seq)
-            #subseq = rc_seq[60:123]
-            subseq = rc_seq[-93:-30]
+            subseq = rc_seq[60:123]
         else:
             subseq = seq
         
@@ -176,7 +174,7 @@ if __name__ == '__main__':
     seq_list = parse_input_file(inputFile)
     print "total # of sequences=", len(seq_list)
     
-    matrix_files = ["start", "stop", "start1", "stop1"]
+    matrix_files = ["start", "stop", "stop1", "start1"]
     
     pwm_file_name = inputFile + ".pwm"
     
@@ -184,7 +182,7 @@ if __name__ == '__main__':
     
     #parameter_index  0: deviation  1: mean  2:   1/2* deviation * sqrt(2*pi))   
     parameter_index = 0
-    #matrix_index    0: start;  1: stop;  2: start1;  3; stop1
+    #matrix_index    0: start;  1: stop;  2: stop1;  3; start1
     matrix_index = -1
     
     for matrix_file in matrix_files:
