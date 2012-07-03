@@ -342,11 +342,11 @@ if __name__ == '__main__':
         
     inputFile = opts.input 
     
-    #seq_list = parse_input_file(inputFile)
-    #print "total # of sequences=", len(seq_list)
+    seq_list = parse_input_file(inputFile)
+    print "total # of sequences=", len(seq_list)
     
-    #train_gene_transition_two_way(seq_list)
-    #train_start_stop_adjacent_prob(seq_list)
+    train_gene_transition_two_way(seq_list)
+    train_start_stop_adjacent_prob(seq_list)
     
     if opts.noncoding and os.path.isfile(opts.noncoding):
         noncoding_seq_list = parse_input_file(opts.noncoding, noncoding=True)
