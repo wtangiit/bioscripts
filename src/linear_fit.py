@@ -6,8 +6,7 @@ take trained gene or rgene as input, generate a new trained file gene.fit or rge
 transition probability is the linear function of gc content. In the mean time, generate the 
 plots showing linear regression.
 
-./linear_fit -i gene
-
+./linear_fit.py  -i gene -w gene.ct
 '''
 import os
 from optparse import OptionParser
