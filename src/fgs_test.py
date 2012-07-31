@@ -76,10 +76,10 @@ if __name__ == '__main__':
         os.makedirs(path_output)
         
     if opts.quicktest:
-        #subprocess.call(['tesFGS.pl', '--input=%s' % path_input,  '--stem=%s' % path_output, '--quicktest'])
+        subprocess.call(['tesFGS.pl', '--input=%s' % path_input,  '--stem=%s' % path_output, '--quicktest'])
         print "testFGS.pl --input=%s --stem=%s --quicktest"  %  (path_input, path_output) 
     else:
-        #subprocess.call(['tesFGS.pl', '--input=%s' % path_input,  '--stem=%s' % path_output])
+        subprocess.call(['tesFGS.pl', '--input=%s' % path_input,  '--stem=%s' % path_output])
         print "testFGS.pl --input=%s --stem=%s"  %  (path_input, path_output)
       
 #record metadata
