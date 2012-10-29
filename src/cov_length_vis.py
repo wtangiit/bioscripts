@@ -6,7 +6,7 @@ from Bio import SeqIO
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
+import math
 
 GRID_LINEWIDTH = 0.6
 GRID_ALPHA = 0.3
@@ -20,8 +20,8 @@ def plot_scatter(specs, x_key, y_key, name):
 
     for spec in specs:
         
-        x_value = int(spec[x_key])
-        y_value = int(spec[y_key])
+        x_value = int(float(spec[x_key]))
+        y_value = int(float(spec[y_key]))
         
         x_list.append(x_value)
         y_list.append(y_value)
@@ -34,7 +34,33 @@ def plot_scatter(specs, x_key, y_key, name):
     ax.set_ylabel(y_key)
     ax.set_title(name)
 #    plt.show()
-    plt.savefig("scatter_%s-%s-%s-log.png" % (name, y_key, x_key))
+    plt.savefig("scatter_%s-%s-%s.png" % (name, y_key, x_key))
+    
+    
+def plot_hist(specs, key, name):
+        
+    x_list = []
+    for spec in specs:
+        x_value = int(float(spec[key]))
+        #x_list.append(x_value)
+        x_list.append(math.log(x_value, 10))
+        #print x_value
+        
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+#    ax.set_yscale('log')
+
+    
+
+    ax.hist(x_list, bins=10, facecolor='green')
+    
+    ax.set_xlabel("log(%s)" % key)
+    ax.set_title(name)
+   # plt.show()
+    plt.savefig("hist_%s-log(%s).png" % (name, key))
+    
+
+  # plt.savefig("scatter_%s-%s-%s-log.png" % (name, y_key, x_key))
 
 def plot_acc_length(specs, name):
         
@@ -42,7 +68,7 @@ def plot_acc_length(specs, name):
         if spec1.has_key("cov"):
             return -cmp(float(spec1["cov"]), float(spec2["cov"]))
         else:
-            return -cmp(float(spec1["avgcov"]), float(spec2["avgcov"]))
+            return 0
         
     def cmp_length(spec1, spec2):
         return -cmp(float(spec1["length"]), float(spec2["length"]))
@@ -54,7 +80,7 @@ def plot_acc_length(specs, name):
     cov_list = []    
     
     acc_lengths = []
-    acc_length = 0
+    length = 0
     for spec in specs:
         length = int(spec["length"])
         acc_length += length
@@ -62,8 +88,7 @@ def plot_acc_length(specs, name):
         
         if spec.has_key("cov"):
             cov = spec["cov"]
-        else:
-            cov = spec["avgcov"]
+
             
         cov_list.append(cov)      
         length_list.append(length)  
@@ -87,7 +112,7 @@ def plot_acc_lencov(specs, name):
         if spec1.has_key("cov"):
             return -cmp(float(spec1["cov"]), float(spec2["cov"]))
         else:
-            return -cmp(float(spec1["avgcov"]), float(spec2["avgcov"]))
+            return 0
         
     def cmp_length(spec1, spec2):
         return -cmp(float(spec1["length"]), float(spec2["length"]))
@@ -100,8 +125,7 @@ def plot_acc_lencov(specs, name):
     
     acc_lengths = []
     acc_length = 0
-    
-
+   
     lencov_list = []
     
     acc_lencov = 0
@@ -111,18 +135,15 @@ def plot_acc_lencov(specs, name):
         length = int(spec["length"])
         acc_length += length
         acc_lengths.append(acc_length)
-        
-        if spec.has_key("cov"):
-            cov = float(spec["cov"])
-        else:
-            cov = float(spec["avgcov"])
+
+        cov = float(spec["cov"])
             
         cov_list.append(cov)      
         length_list.append(length)
         
         lencov = length*cov
         size = int(spec["size"])
-        print lencov / size 
+        #print lencov / size 
         lencov_list.append(lencov)
                 
     acc_fexplain_list = []
@@ -154,10 +175,9 @@ if __name__ == '__main__':
     parser.add_option("-c", "--cdf", dest="cdf", default=None, help="draw cdf")
     parser.add_option("-x", "--x",  dest="x", default=None, help="name for x_axis")
     parser.add_option("-y", "--y",  dest="y", default=None, help="name for y_axis")
+    parser.add_option("-t","--hist",  dest="hist", default=None, help="histogram")
     
-    parser.add_option("-a", "--acc", dest="acc", action="store_true", default=False, help="draw accumulating function")
-      
-    
+    parser.add_option("-a", "--acc", dest="acc", action="store_true", default=False, help="draw accumulating function")   
   
     (opts, args) = parser.parse_args()
         
@@ -175,21 +195,20 @@ if __name__ == '__main__':
         spec['id'] = slices[0]
         for i in range(1, len(slices)):
             strs = slices[i].split("=")
-            spec[strs[0]] = strs[1]
+            key = strs[0]
+            value = strs[1]
+            if key=="avgcov":
+                key = "cov"
+            spec[key] = value
         specs.append(spec)
     if (opts.x and opts.y):
         plot_scatter(specs, opts.x, opts.y, opts.inp)
+        #plot_hist(specs, opts.x, opts.y, opts.inp)
+        
+    if (opts.hist):
+        plot_hist(specs, opts.hist, opts.inp)
         
     if opts.acc:
         plot_acc_lencov(specs, opts.inp)
         #plot_acc_length(specs, opts.inp)
-        
-  
-  
-    
-    
-
-    
-        
-
-        
+           
