@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # General-purpose get-the-data script; tries to recognize accesison number and download data accordingly.  
 
-# For GENBANK, depends on Biopython
-# For MGRAST and WGS depends on curl
-# For SRA depends on hard-coded paths to aspera ascp
+# For GENBANK, depends on Biopython  example:   fetch.py NC_000907 -f gb
+# For MGRAST and WGS depends on curl example:   fetch.py AAAE 
+#                                               fetch.py 4440055.3 
+# For SRA depends on hard-coded aspera ascp     fetch.py SRR000311 
 
 import sys, os, re
 from optparse import OptionParser
