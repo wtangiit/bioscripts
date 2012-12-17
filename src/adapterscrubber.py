@@ -37,7 +37,7 @@ def align ( sequence, adapter ):  # takes two sequences, returns best alignment 
    for i in range(-len(a), len(b)):
       (m,r) = ip(a, b, i ) 
       c = float(m)/float(r)
-      if m > bestm and c > MINALIGNID and r > MINOVERLAP :
+      if m > bestm and c >= MINALIGNID and r >= MINOVERLAP :
          bestm = m
          besto = i
          bestr = r
@@ -81,6 +81,7 @@ if __name__ == '__main__':
 
   if opts.verbose: sys.stdout.write("Testing %s against adapter database %s\n"%(filename, dbfile))
   adapters = {}
+  adapters[0] = ""
   for seq_record in SeqIO.parse(dbfile , "fasta"):
      adapters[seq_record.description] =        string.upper(str(seq_record.seq).translate(removeambigtable))
      adapters["%s.R"%seq_record.description] = string.upper(str(seq_record.seq.reverse_complement()).translate(removeambigtable))
@@ -88,9 +89,9 @@ if __name__ == '__main__':
   for seq_record in SeqIO.parse(filename , "fasta"):
      (a,b) = bestalign( seq_record.seq, adapters )
 
-     flag = a > 0
+     contaminatedflag = a > 0
 #     print seq_record.description, a, len(adapters[b]), b
-     print seq_record.description, str(int(flag))
+     print seq_record.description, str(int(contaminatedflag))
 
 
 
