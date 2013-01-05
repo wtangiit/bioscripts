@@ -4,7 +4,7 @@
 # For GENBANK, depends on Biopython  example:   fetch.py NC_000907 -f gb
 # For MGRAST and WGS depends on curl example:   fetch.py AAAE 
 #                                               fetch.py 4440055.3 
-# For SRA depends on hard-coded aspera ascp     fetch.py SRR000311 
+# For SRA depends on aspera ascp in ASPERAPATH  fetch.py SRR000311 
 
 import sys, os, re
 from optparse import OptionParser
@@ -44,7 +44,13 @@ def retrieveMGRbyaccession(accession, format="fasta"):
   os.system(s )
   
 def retrieveSRRbyaccession(accession, format="fastq"):
+  try:
+    asperapath=os.environ["ASPERAPATH"]
+  except KeyError:
+    sys.exit("Error: environment variable ASPERAPATH must be defined and point to aspera to use SRR download")
   a= re.search(".RR(......)", accession).group(1)
+
+
   print  "Fetching SRR accession %s"%accession
   tla      = accession[0:3]
   stem     = accession[0:6]
@@ -69,7 +75,6 @@ if __name__ == '__main__':
   except KeyError:
     key=""
 
-  asperapath= "/homes/trimble/build/aspera"
   try :
     accession = args[0]
   except IndexError:
