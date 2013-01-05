@@ -9,7 +9,6 @@
 import sys, os, re
 from optparse import OptionParser
 
-asperapath= "/homes/trimble/build/aspera"
 
 def retrieveGENBANKbyaccession(accession, format="fasta"):
   from Bio import Entrez
@@ -34,7 +33,13 @@ def retrieveWGSbyaccession(accession, format="fasta"):
 def retrieveMGRbyaccession(accession, format="fasta"):
 #  http://api.metagenomics.anl.gov/reads/mgm4447971.3
   a=re.search("^(4......\..)$", accession).group(1)
-  s="curl http://api.metagenomics.anl.gov/reads/mgm%s -D /tmp/fetch-dump > %s.gz"%(a, a) 
+  if key=="":
+    sys.stderr.write("MGR webkey not defined\n")
+    s="curl http://api.metagenomics.anl.gov/reads/mgm%s/ -D /tmp/fetch-dump > %s.gz"%(a, a) 
+  else: 
+    sys.stderr.write("Using MGR webkey %s\n"%key)
+    s="curl 'http://api.metagenomics.anl.gov/reads/mgm%s/?&auth=%s' -D /tmp/fetch-dump > %s.gz"%(a, key, a)
+  sys.stderr.write("Executing %s\n"%s) 
   print s
   os.system(s )
   
@@ -59,6 +64,12 @@ if __name__ == '__main__':
   parser = OptionParser(usage)
   parser.add_option("-f", "--format", dest="format", default=None, help="Data format")
   (opts, args) = parser.parse_args()
+  try:
+    key=os.environ["MGRKEY"]
+  except KeyError:
+    key=""
+
+  asperapath= "/homes/trimble/build/aspera"
   try :
     accession = args[0]
   except IndexError:
