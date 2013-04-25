@@ -44,21 +44,21 @@ def retrieveWGSbyaccession(accession, rformat="fasta"):
     os.system(s) 
 
 def retrieveMGRbyaccession(accession, rformat="fasta"):
-#  http://api.metagenomics.anl.gov/sequences/mgm4447971.3
+#  http://api.metagenomics.anl.gov/sequences/mgm4447971.3 OBSOLETE
+#  http://api.metagenomics.anl.gov/reads/mgm4447971.3   OBSOLETE
     a=re.search("^(4......\..)$", accession).group(1)
     if key=="":
         sys.stderr.write("MGR webkey not defined\n")
-        s = "curl http://api.metagenomics.anl.gov/reads/mgm%s/ -D /tmp/fetch-dump > %s.gz" % (a, a) 
-        s = "curl http://api.metagenomics.anl.gov/sequenceset/mgm%s/ -D /tmp/fetch-dump > %s.gz" % (a, a) 
-        s = "curl http://api.metagenomics.anl.gov/sequenceset/mgm%s-050-2 -D /tmp/fetch-dump > %s.gz" % (a, a) 
+        s = "curl http://api.metagenomics.anl.gov/sequenceset/mgm%s/ -D /tmp/fetch-dump"  % ( a, ) 
+        s1 = "curl http://api.metagenomics.anl.gov/sequenceset/mgm%s-050-1/ -D /tmp/fetch-dump > %s.gz"  % ( a, a ) 
     else: 
         sys.stderr.write("Using MGR webkey %s\n" % key)
-        s = "curl 'http://api.metagenomics.anl.gov/reads/mgm%s/?&auth=%s' -D /tmp/fetch-dump > %s.gz" % (a, key, a)
-        s = "curl 'http://api.metagenomics.anl.gov/sequenceset/mgm%s/?&auth=%s' -D /tmp/fetch-dump > %s.gz" % (a, key, a)
-        s = "curl 'http://api.metagenomics.anl.gov/sequenceset/mgm%s-050-2/?&auth=%s' -D /tmp/fetch-dump > %s.gz" % (a, key, a)
-    sys.stderr.write("Executing %s\n" % s) 
-    print s
-    os.system(s )
+        s = "curl 'http://api.metagenomics.anl.gov/sequenceset/mgm%s/?&auth=%s' -D /tmp/fetch-dump" % ( a, key )
+        s1 = "curl 'http://api.metagenomics.anl.gov/sequenceset/mgm%s-050-1/?&auth=%s' -D /tmp/fetch-dump > %s.gz" % ( a, key, a )
+#    jsonobject = os.popen(s).read()
+#    print jsonobject
+    sys.stderr.write("Executing %s\n" % s1) 
+    os.popen(s1)
   
 def retrieveSRRbyaccession(accession, rformat="fastq"):
     try:
