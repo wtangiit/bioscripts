@@ -14,6 +14,7 @@ Outputs an nxn matrix of floats to standard out
 
 euclidean -- euclidean distance, for testing
 bogot     -- bogus t-distance.  A horrible approximation (gaussian approx to beta posteriors)
+             WARNING: this is positive and symmetric but not metric
 
 others are experimental and not warrantied.
 '''
@@ -33,7 +34,8 @@ def kl2(a1, b1, a2, b2, x):    # KL divergence given x, log(posterior1) and log(
    p_lin = p_lin / p_lin.sum() / d   # Normalize
    p_lin[np.isinf( p_lin ) ] =  0    # clean up after divide
    p_lin[np.isnan( p_lin ) ] =  0
-#   q_lin = np.exp(q)
+   print "pq, ", p
+   print q
    ratio_pq = p - q
    ratio_pq[np.isinf( ratio_pq ) ] =  0
    a = (ratio_pq ) * p_lin * d
@@ -44,15 +46,16 @@ def kl2(a1, b1, a2, b2, x):    # KL divergence given x, log(posterior1) and log(
 def kl(p, q, x):    # KL divergence given x, log(posterior1) and log(posterior2)
    d = x[1] - x[0]
    p_lin = np.exp(p)
-   p_lin[np.isinf( p_lin ) ] =  0    # clean up before sum
-   p_lin[np.isnan( p_lin ) ] =  0
    p_lin = p_lin / p_lin.sum() / d   # Normalize
-   p_lin[np.isinf( p_lin ) ] =  0    # clean up after divide
-   p_lin[np.isnan( p_lin ) ] =  0
-#   q_lin = np.exp(q)
+   print "pq, ", p
+   print q
    ratio_pq = p - q
    ratio_pq[np.isinf( ratio_pq ) ] =  0
    a = (ratio_pq ) * p_lin * d
+   a[np.isinf( p_lin ) ] =  0  
+   a[np.isnan( p_lin ) ] =  0
+   a[np.isinf( p_lin ) ] =  0  
+   a[np.isnan( p_lin ) ] =  0
    a[np.isnan( a) ] =  0
    a[np.isinf( a) ] =  0
    return a.sum()
@@ -78,21 +81,17 @@ def jsd(p, q,x):
    d= x[1]- x[0]
    p_lin = np.exp(p)
    q_lin = np.exp(q)
-#   if any(np.isnan(q_lin)) : print "q_lin nan"
-#   if any(np.isnan(p_lin)) : print "p_lin nan"
-#   if any(np.isinf(p_lin)) : print "p_lin inf"
-#   if any(np.isinf(q_lin)) : print "q_lin inf"
    p_lin[np.isinf( p_lin ) ] =  0
    q_lin[np.isinf( q_lin ) ] =  0
-   p_lin = p_lin / p_lin.sum() / d
-   q_lin = q_lin / q_lin.sum() / d
+   p_lin = p_lin / p_lin.sum() 
+   q_lin = q_lin / q_lin.sum() 
    m = np.log((p_lin + q_lin)  * 0.5)
-#   if any(np.isnan(m)) : print "m nan"
-#   if any(np.isinf(m)) : print "m inf"
-   m[np.isnan( m ) ] =  -500
-   m[np.isinf( m ) ] =  -500
+   if any(np.isnan(m)) : print "m nan"
+   if any(np.isinf(m)) : print "m inf"
+#   m[np.isnan( m ) ] =  -500
+#   m[np.isinf( m ) ] =  -500
    b = kl(p,m,x) * 0.5 + kl(q, m,x) * 0.5
-#   print "one %f, two %f "% (kl(p,m,x) * 0.5 , kl(q, m,x) * 0.5 ) 
+#   print "one %f, two %f  b %f"% (kl(p,m,x) * 0.5 , kl(q, m,x) * 0.5 , b) 
    if b < 0 : b=0
    return b
 
@@ -115,8 +114,17 @@ def calculateposteriors(A, x, returnformat="linear"):
 #         print "beta of ",  datatable[k][i] + pseudo , T[i] - datatable[k][i] + pseudo , "T(i)  ", T[i]
          if returnformat=="linear":
            posterior[k][i] = scipy.stats.beta.pdf(x, datatable[k][i] + pseudo, T[i] - datatable[k][i] + pseudo  )
-         elif returnformat=="log":
+         elif returnformat=="logold":
            posterior[k][i] = scipy.stats.beta.logpdf(x, datatable[k][i] + pseudo, T[i] - datatable[k][i] + pseudo  )
+         elif returnformat=="log":
+           temp = (datatable[k][i] + pseudo -1 ) * np.log( x )  + ( T[i] - datatable[k][i] + pseudo - 1 ) *  np.log(1-x)
+           temp2 = np.exp(temp)
+           temp2 = temp2 / temp2.sum() 
+            
+           b  = np.log( temp2 )
+#           print "sum: ", np.exp(b).sum()
+#           print b
+           posterior[k][i] = b 
     return posterior
 
  
@@ -130,7 +138,7 @@ if __name__ == '__main__':
 
   # parse options
   (opts, args) = parser.parse_args()
-  pseudo = opts.pseudo 
+  pseudo = float(opts.pseudo)
   if len(args) == 0 :
     parser.error("Input file is mandatory argument" )
    
@@ -170,6 +178,25 @@ if __name__ == '__main__':
          distancemat[j][i] = D
     showdistancemat(distancemat, headers)
 
+  if opts.dist == "jsdnaive":
+    A = datatable
+    R = (A / np.sum(A.T,axis=1))       # divide by sum of each col
+    R[np.nonzero(np.isnan(R)) ] = 0    # set nans to zero  (shouldn't be necessary)
+    if opts.verbose:    np.savetxt(sys.stdout, R, fmt="%.4f", delimiter="\t")
+    print "Input data matrix: (%d x %d) "%(len(A[:,0] ) , len(A[0,:]) )
+    distancemat= np.zeros((nsamples, nsamples)) 
+    
+    for i in range(0, nsamples  ) : 
+      for j in range(0,  i ) : 
+         d=0
+         m = 0.5 * ( R[:,i] + R[:,j] ) 
+         for k in range(0, len( R[:,i] ) ) :
+           if m[k] > 0 :
+             print d, 0.5*  R[k,i] * (np.log(R[k,i]) - np.log(m[k])) + 0.5*  R[k,j] * (np.log(R[k,j]) - np.log(m[k]))
+             d+= 0.5* R[k,i] * (np.log(R[k,i]) - np.log(m[k])) + 0.5*  R[k,j] * (np.log(R[k,j]) - np.log(m[k]))
+         distancemat[j][i] = d/np.log(2)
+    showdistancemat(distancemat, headers)
+
   elif opts.dist == "jsdbayes1":
     A = datatable
     T = np.sum(A.T,axis=1)       # sum each col
@@ -179,9 +206,9 @@ if __name__ == '__main__':
     for k in [0,1]:                 # iterate over two features
       distancemat = np.zeros((nsamples, nsamples))
       for i in range(0, nsamples  ) :
-         for j in range(0, i+1 ) :   
+         for j in range(0, nsamples ) :   
           distancemat[i][j] = np.sqrt(jsd(logposterior[k][i], logposterior[k][j], x ))
-          distancemat[j][i] = np.sqrt(jsd(logposterior[k][i], logposterior[k][j], x ))
+          distancemat[i][j] = np.sqrt(jsd(logposterior[k][i], logposterior[k][j], x ))
       showdistancemat(distancemat, headers)
   
   elif opts.dist == "kl1":
@@ -211,7 +238,7 @@ if __name__ == '__main__':
   elif opts.dist == "jsdbayes":
     A = datatable
     x = np.arange(0,1 - .005 ,.01) + .005
-    posterior    = calculateposteriors(A, x)
+    posterior    = calculateposteriors(A, x, returnformat="linear")
     logposterior = calculateposteriors(A, x, returnformat="log")
 
     distancemat = np.zeros((nsamples, nsamples))
