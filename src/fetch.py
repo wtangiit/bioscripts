@@ -16,6 +16,9 @@
 # per instructions at http://www.ebi.ac.uk/ena/about/sra_data_download
 # ascp -QT -i /homes/trimble/build/aspera/etc/asperaweb_id_dsa.putty era-fasp@fasp.sra.ebi.ac.uk:vol1/srr/SRR387/SRR387449 ./SRR387449-2.gz
 # works as a fallback!
+# 
+# according to https://sites.google.com/a/brown.edu/bioinformatics-in-biomed/ncbi-sra-downloading 
+# ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR446/SRR446981
 
 import sys, os, re
 from optparse import OptionParser
@@ -66,17 +69,21 @@ def retrieveSRRbyaccession(accession, rformat="fastq"):
     try:
         asperapath=os.environ["ASPERAPATH"]
     except KeyError:
-        sys.exit("Error: environment variable ASPERAPATH must be defined and point to aspera to use SRR download")
+        asperapath = None
+        sys.stderr.write("Error: environment variable ASPERAPATH must be defined and point to aspera to use SRR download\n")
     print  "Fetching SRR accession %s" % accession
     tla      = accession[0:3]
     stem     = accession[0:6]
     filename = accession+".sra"
     s = "%s/bin/ascp -l 300m -QT -i %s/etc/asperaweb_id_dsa.putty anonftp\@ftp-trace.ncbi.nlm.nih.gov:sra/sra-instant/reads/ByRun/sra/%s/%s/%s/%s ./%s" % ( asperapath, asperapath, tla, stem, accession, filename, filename)
     print "with %s" % (s)
-    if int(os.popen("ascp 2>&1 |wc").read().split()[0]) > 10:
+    if int(os.popen("ascp 2>&1 |wc").read().split()[0]) > 10 and asperapath != None:
         os.system(s)
     else: 
-        sys.exit("Sorry, can't find ascp.\t")
+        sys.stderr.write("Can't find ascp, falling back on ftp\n")
+        s = "wget ftp://ftp-trace.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/%s/%s/%s/%s" % ( tla, stem, accession, filename, )
+        print s
+        os.system(s)
     print s 
     s = "fastq-dump --split-3 ./%s & " % (filename)
     print s
