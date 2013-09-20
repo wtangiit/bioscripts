@@ -12,6 +12,9 @@ valid_file_id = ["050.1", "050.2"]  #fastq or fasta
                
 def fetchByAccession(id, key=""):
     url = "http://api.metagenomics.anl.gov/1/download/mgm"+id
+    if key != "":
+        url += "?auth="+key
+    
     r = requests.get(url, headers={}, allow_redirects=True)
     data = r.json()
     for item in data:
@@ -25,9 +28,9 @@ def fetchByAccession(id, key=""):
             try:
                 rget = requests.get(downloadurl, headers={}, allow_redirects=True, stream = True)
             except Exception as e:
-                raise Exception(u'Unable to connect to MG-RAST API server %s: %s' %(url, e))
+                raise Exception(u'Unable to connect to MG-RAST API server %s: %s' %(downloadurl, e))
             if not (rget.ok):
-                raise Exception(u'Unable to connect to MG-RAST API server %s: %s' %(url, rget.raise_for_status()))
+                raise Exception(u'Unable to connect to MG-RAST API server %s: %s' %(downloadurl, rget.raise_for_status()))
             with open(filename, 'wb') as f:
                 for chunk in rget.iter_content(chunk_size=8192): 
                     if chunk:
