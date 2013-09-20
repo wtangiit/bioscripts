@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 '''download MG-RAST input by accession number'''
-import datetime
+
+#doc to install requests module: http://www.python-requests.org/en/latest/user/install/
+from optparse import OptionParser
 import json
 import requests
-import sys
-import pprint
-import time
-from optparse import OptionParser
 
 valid_file_id = ["050.1", "050.2"]  #fastq or fasta
                
